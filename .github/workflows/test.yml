@@ -1,0 +1,19 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: shellcheck commit-via-api/commit.sh tests/*.sh
+      - run: bash tests/commit-via-api.sh

@@ -1,0 +1,51 @@
+name: Commit via API
+description: >-
+  Create a commit through the GitHub GraphQL API so GitHub signs it (Verified),
+  optionally re-applying the change on top of the latest branch and retrying.
+inputs:
+  token:
+    description: Token with contents:write on the target repository (GITHUB_TOKEN or a GitHub App installation token)
+    required: true
+  message:
+    description: Commit headline
+    required: true
+  repository:
+    description: Target repository (owner/name)
+    default: ${{ github.repository }}
+  branch:
+    description: Target branch
+    default: ${{ github.ref_name }}
+  working-directory:
+    description: Git checkout of the target repository
+    default: .
+  apply:
+    description: >-
+      Optional shell script that makes and stages the change. When set, each attempt
+      resets to the latest remote branch first, so conflicting pushes are retried
+      cleanly. When empty, the already staged changes are committed once.
+    default: ""
+  attempts:
+    description: Attempts when apply is set
+    default: "5"
+  sync-checkout:
+    description: Reset the checkout to the new remote commit afterwards (e.g. when later steps tag HEAD)
+    default: "false"
+outputs:
+  sha:
+    description: SHA of the created commit (empty when there was nothing to commit)
+    value: ${{ steps.commit.outputs.sha }}
+runs:
+  using: composite
+  steps:
+    - id: commit
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        INPUT_MESSAGE: ${{ inputs.message }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        INPUT_BRANCH: ${{ inputs.branch }}
+        INPUT_APPLY: ${{ inputs.apply }}
+        INPUT_ATTEMPTS: ${{ inputs.attempts }}
+        INPUT_SYNC_CHECKOUT: ${{ inputs.sync-checkout }}
+      run: "$GITHUB_ACTION_PATH/commit.sh"
